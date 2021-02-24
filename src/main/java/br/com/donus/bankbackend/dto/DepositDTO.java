@@ -10,7 +10,9 @@ import lombok.Data;
 public class DepositDTO {
 
 	@NotNull
-	private Long accountId;
+	private Integer accountId;
+	
+	@NotNull
 	@Max(value = 2000)
 	@Positive
 	private Double value;

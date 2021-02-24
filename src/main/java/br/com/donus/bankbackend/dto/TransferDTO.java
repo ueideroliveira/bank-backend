@@ -9,9 +9,10 @@ import lombok.Data;
 public class TransferDTO {
 
 	@NotNull
-	private Long originAccountId;
+	private Integer originAccountId;
 	@NotNull
-	private Long destinyAccountId;
+	private Integer destinyAccountId;
+	@NotNull
 	@Positive
 	private Double value;
 }

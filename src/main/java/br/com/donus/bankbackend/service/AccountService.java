@@ -2,6 +2,7 @@ package br.com.donus.bankbackend.service;
 
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -29,14 +30,11 @@ public class AccountService {
 	
 	private Locale locale = LocaleContextHolder.getLocale();
 	
-	public Account findById(Long id) {
-		return accountRepository.findById(id)
-				.orElseThrow(() -> 
-					new AccountNotFoundException(message.getMessage("message.account.not.found", null, locale))
-				);
+	public Account findById(Integer id) {
+		return accountRepository.findById(id).orElseThrow(accountNotFoundException());
 	}
 	
-	public Long create(AccountDTO account) {
+	public Account create(AccountDTO account) {
 		accountRepository.findByDocument(account.getDocument())
 			.ifPresent(a -> {
 				throw new PersonAccountFoundException(message.getMessage("message.person.account.found", null, locale));
@@ -44,20 +42,22 @@ public class AccountService {
 		
 		Account accountEntity = createNewAccount(account);
 		accountRepository.save(accountEntity);
-		return accountEntity.getId();
+		return accountEntity;
 	}
 
-	public void deposit(DepositDTO deposit) {
-		Optional<Account> accountOptional = accountRepository.findById(deposit.getAccountId());
-		accountOptional.ifPresent(account -> updateBalance(account, sumBalance(account, deposit.getValue())));
+	public Account deposit(DepositDTO deposit) {
+		Account account = accountRepository.findById(deposit.getAccountId())
+					.orElseThrow(accountNotFoundException()
+					);
+		return updateBalance(account, sumBalance(account, deposit.getValue()));
 	}
 
 	public void transfer(TransferDTO transfer) {
 		Optional<Account> originAccountOptional = accountRepository.findById(transfer.getOriginAccountId());
-		Account originAccount = originAccountOptional.orElseThrow();
+		Account originAccount = originAccountOptional.orElseThrow(accountNotFoundException());
 		
 		Optional<Account> destinyAccountOptional = accountRepository.findById(transfer.getDestinyAccountId());
-		Account destinyAccount = destinyAccountOptional.orElseThrow();
+		Account destinyAccount = destinyAccountOptional.orElseThrow(accountNotFoundException());
 		
 		Double originAccountBalance = minusBalance(originAccount, transfer.getValue());
 		validBalanceNegative(originAccountBalance);
@@ -68,15 +68,20 @@ public class AccountService {
 		updateBalance(destinyAccount, destinyAccountBalance);
 	}
 
+	private Supplier<? extends AccountNotFoundException> accountNotFoundException() {
+		return () -> new AccountNotFoundException(message.getMessage("message.account.not.found", null, locale));
+	}
+
 	private void validBalanceNegative(Double originAccountBalance) {
 		if(originAccountBalance < 0) {
 			throw new TransferBalanceNegativeException(message.getMessage("message.transfer.balance.negative", null, locale));
 		}
 	}
 	
-	private void updateBalance(Account account, Double value) {
+	private Account updateBalance(Account account, Double value) {
 		account.setBalance(value);
 		accountRepository.save(account);
+		return account;
 	}
 	
 	private Double sumBalance(Account account, Double value){

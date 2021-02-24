@@ -29,16 +29,16 @@ public class AccountController {
 	
 	@ApiOperation(value = "Consultar conta bancária")
 	@GetMapping(path = "/{id}")
-	public ResponseEntity<Account> findById(@PathVariable Long id) {
+	public ResponseEntity<Account> findById(@PathVariable Integer id) {
 	   Account account =  accountService.findById(id);
 	   return ResponseEntity.ok().body(account);
 	}
 	
 	@ApiOperation(value = "Criar conta bancária.")
 	@PostMapping
-	public ResponseEntity<Long> create(@Valid @RequestBody AccountDTO account) {
-		Long id =  accountService.create(account);
-		return ResponseEntity.status(HttpStatus.CREATED).body(id);
+	public ResponseEntity<Integer> create(@Valid @RequestBody AccountDTO accountDTO) {
+		Account account =  accountService.create(accountDTO);
+		return ResponseEntity.status(HttpStatus.CREATED).body(account.getId());
 	}
 	
 	@ApiOperation(value = "Depositar na conta bancária.")
